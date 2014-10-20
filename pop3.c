@@ -32,7 +32,7 @@ void main(int argc, char *argv[]) {
     char *pass = argv[3];
     char filename[1024];
     char temp[1024];
-    char headerBuf[1024];
+    char headerBuf[8192];
     //Mencoba mencari address info dari hostname yang diberikan
     hints.ai_family = AF_INET;
     hints.ai_socktype = SOCK_STREAM;
@@ -174,16 +174,18 @@ int stat (int sock) {
         - fd adalah file descriptor dari file yang digunakan untuk menyimpan isi mail.
 */
 int retrToFile (int sock, int mailId, int fd, int deleteMail) {
-    char buf[100], rbuf[100], *bodyPtr;
+    char buf[100], rbuf[10], tbuf[25]="";
     int bytes;
     sprintf(buf, "retr %d\r\n", mailId);
     send(sock, buf, strlen(buf), 0);
-    while (bytes = recv(sock, rbuf, 99, 0)) {
+    while ( (bytes = recv(sock, rbuf, 9, 0)) > 0) {
         rbuf[bytes] = 0;
-        if (strstr(rbuf, "\r\n.\r\n") != NULL) {
-            write(fd, rbuf, bytes-3);
+        strcat(tbuf, rbuf);
+        if (strstr(tbuf, "\r\n.\r\n") != NULL) {
+            write(fd, rbuf, bytes);
             break;
         }
+        strcpy(tbuf, rbuf);
         write(fd, rbuf, bytes);
     }
 
@@ -208,16 +210,21 @@ int retrToFile (int sock, int mailId, int fd, int deleteMail) {
         TOPFAIL apabila terjadi masalah (misal mail dengan mailId yang dieberikan tidak ada)
 */
 int getHeader (int sock, int mailId, char *header) {
-    char buf[100], rbuf[1024];
+    char buf[100], rbuf[10], tbuf[25]="";
     int bytes;
     sprintf(buf, "top %d 0\r\n", mailId);
     send(sock, buf, strlen(buf), 0);
-    bytes = recv(sock, rbuf, sizeof(rbuf), 0);
-    if (rbuf[0] == '-') {
-        return TOPFAIL;
+    header[0] = 0;
+    while ( (bytes = recv(sock, rbuf, 9, 0)) > 0) {
+        rbuf[bytes] = 0;
+        strcat(tbuf, rbuf);
+        if (strstr(tbuf, "\r\n.\r\n") != NULL) {
+            strcat(header, rbuf);
+            break;
+        }
+        strcpy(tbuf, rbuf);
+        strcat(header, rbuf);
     }
-    rbuf[bytes-1] = 0;
-    strcpy(header, rbuf);
     return SUCCESS;
 }
 
@@ -240,7 +247,7 @@ int getHeaderValue(const char* header, const char* field, char *output) {
 }
 
 void quit(int sockfd) {
-    char buf[10], rbuf[20];
+    char buf[10];
     sprintf(buf, "quit\r\n");
     write(sockfd, buf, strlen(buf));
 }

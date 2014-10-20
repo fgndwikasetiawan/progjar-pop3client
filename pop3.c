@@ -214,6 +214,12 @@ int getHeader (int sock, int mailId, char *header) {
     int bytes;
     sprintf(buf, "top %d 0\r\n", mailId);
     send(sock, buf, strlen(buf), 0);
+    
+    recv(sock, rbuf, 1, 0);
+    if (rbuf[0] == '-') {
+		return TOPFAIL;
+	}
+    
     header[0] = 0;
     while ( (bytes = recv(sock, rbuf, 9, 0)) > 0) {
         rbuf[bytes] = 0;

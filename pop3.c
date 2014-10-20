@@ -8,10 +8,12 @@
 #define CONNFAIL -1
 #define AUTHFAIL -2
 #define TOPFAIL -1
-//fungsi untuk proses autentikasi, return valuenya SUCCESS, CONNFAIL, atau AUTHFAIL
 int auth(int, char*, char*);
-//fungsi untuk mengirimkan pesan STAT ke server, return valuenya adalah jumlah mail yang ada di mailbox
 int stat(int);
+int retrToFile (int, int, int, int);
+int getHeader (int, int, char*);
+int getHeaderValue(const char*, const char*, char*);
+void quit(int);
 
 void main(int argc, char *argv[]) {
     int i, j, k;

@@ -108,7 +108,7 @@ void main(int argc, char *argv[]) {
         scanf("%d", &i);
     }
     //Selesai, tutup socket
-    quit();
+    quit(sock);
     close(sock);
 }
 
@@ -174,8 +174,8 @@ int stat (int sock) {
         - fd adalah file descriptor dari file yang digunakan untuk menyimpan isi mail.
 */
 int retrToFile (int sock, int mailId, int fd, int deleteMail) {
-    char buf[100], rbuf[100], *bodyPtr, tbuf[12] = "";
-    int bytes, sentinel;
+    char buf[100], rbuf[100], *bodyPtr;
+    int bytes;
     sprintf(buf, "retr %d\r\n", mailId);
     send(sock, buf, strlen(buf), 0);
     while (bytes = recv(sock, rbuf, 99, 0)) {

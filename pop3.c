@@ -34,10 +34,10 @@ void main(int argc, char *argv[]) {
     char temp[1024];
     char headerBuf[8192];
     //Mencoba mencari address info dari hostname yang diberikan
-    hints.ai_family = AF_INET;
-    hints.ai_socktype = SOCK_STREAM;
-    hints.ai_protocol = IPPROTO_TCP;
-    hints.ai_flags = 0;
+    hints.ai_family = AF_INET; //kita minta IPv4
+    hints.ai_socktype = SOCK_STREAM; // kita minta TCP
+    hints.ai_protocol = IPPROTO_TCP; // kita minta TCP
+    hints.ai_flags = 0; //ritual
     status = getaddrinfo(address, "pop3", &hints, &results);
     if (status != 0) {
         printf("Error getting address info: %d\n", status);
@@ -68,17 +68,17 @@ void main(int argc, char *argv[]) {
         status = getHeader(sock, i, headerBuf);
         printf("%d.  ", i);
         if (status == SUCCESS) {
-            status = getHeaderValue(headerBuf, "Subject", temp);
+            status = getHeaderValue(headerBuf, "Subject: ", temp);
             if (status == SUCCESS )
                 printf("%s", temp);
             else
                 printf("<no subject>");
-            status = getHeaderValue(headerBuf, "From", temp);
+            status = getHeaderValue(headerBuf, "From: ", temp);
             if (status == SUCCESS )
                 printf(" (%s)", temp);
             else
                 printf(" (<unknown sender>)");
-            status = getHeaderValue(headerBuf, "Date", temp);
+            status = getHeaderValue(headerBuf, "Date: ", temp);
             if (status == SUCCESS )
                 printf(" -- on %s\n", temp);
             else
@@ -174,10 +174,12 @@ int stat (int sock) {
         - fd adalah file descriptor dari file yang digunakan untuk menyimpan isi mail.
 */
 int retrToFile (int sock, int mailId, int fd, int deleteMail) {
-    char buf[100], rbuf[10], tbuf[25]="";
+    char buf[20], rbuf[10], tbuf[25]="";
     int bytes;
     sprintf(buf, "retr %d\r\n", mailId);
     send(sock, buf, strlen(buf), 0);
+    ///////////////////////////////////////////////
+
     while ( (bytes = recv(sock, rbuf, 9, 0)) > 0) {
         rbuf[bytes] = 0;
         strcat(tbuf, rbuf);
@@ -214,12 +216,12 @@ int getHeader (int sock, int mailId, char *header) {
     int bytes;
     sprintf(buf, "top %d 0\r\n", mailId);
     send(sock, buf, strlen(buf), 0);
-    
+
     recv(sock, rbuf, 1, 0);
     if (rbuf[0] == '-') {
 		return TOPFAIL;
 	}
-    
+
     header[0] = 0;
     while ( (bytes = recv(sock, rbuf, 9, 0)) > 0) {
         rbuf[bytes] = 0;
@@ -246,7 +248,7 @@ int getHeader (int sock, int mailId, char *header) {
 int getHeaderValue(const char* header, const char* field, char *output) {
     char *tempPtr = strstr(header, field);
     if (tempPtr != NULL) {
-        sscanf(tempPtr, "%*s %[^\r\n]", output);
+        sscanf(tempPtr, "%*s%[^\r\n]", output);
         return 0;
     }
     else return -1;
